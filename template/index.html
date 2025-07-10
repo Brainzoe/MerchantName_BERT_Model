@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Merchant Name Predictor</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 min-h-screen flex flex-col items-center p-6">
+  <h1 class="text-3xl font-bold text-center mb-6">Merchant Uniform Name Predictor</h1>
+
+  <form id="uploadForm" class="bg-white p-6 rounded shadow-md w-full max-w-lg">
+    <input type="file" name="file" accept=".csv,.xlsx" required class="mb-4 w-full border p-2" />
+    <button type="submit" class="w-full bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">Upload & Predict</button>
+  </form>
+
+  <div id="results" class="mt-8 w-full max-w-4xl overflow-x-auto"></div>
+
+  <script>
+    const form = document.getElementById('uploadForm');
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const fileInput = form.querySelector('input[type="file"]');
+      const formData = new FormData();
+      formData.append("file", fileInput.files[0]);
+
+      const res = await fetch("/upload", {
+        method: "POST",
+        body: formData
+      });
+
+      const data = await res.json();
+      const resultDiv = document.getElementById("results");
+      resultDiv.innerHTML = `
+        <h2 class="text-xl font-semibold mb-4">Results:</h2>
+        <pre class="bg-white p-4 rounded shadow text-sm whitespace-pre-wrap">${JSON.stringify(data, null, 2)}</pre>
+      `;
+    });
+  </script>
+</body>
+</html>
