@@ -28,12 +28,12 @@
     </h1>
 
     <form id="uploadForm" class="space-y-4">
-      <label class="block text-gray-700 font-medium mb-1" for="file">Upload CSV File (.csv only):</label>
+      <label class="block text-gray-700 font-medium mb-1" for="file">Upload File (.csv or .xlsx):</label>
       <input
         id="fileInput"
         type="file"
         name="file"
-        accept=".csv"
+        accept=".csv, .xlsx"
         required
         class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring focus:ring-blue-300"
       />
@@ -50,20 +50,22 @@
     </div>
 
     <div id="results" class="mt-8 text-center"></div>
+    <div id="tablePreview" class="overflow-x-auto mt-6"></div>
   </div>
 
   <script>
     const form = document.getElementById('uploadForm');
     const resultsDiv = document.getElementById('results');
     const loading = document.getElementById('loading');
+    const tablePreview = document.getElementById('tablePreview');
 
     form.addEventListener('submit', async (e) => {
       e.preventDefault();
       const fileInput = document.getElementById('fileInput');
       const file = fileInput.files[0];
 
-      if (!file || !file.name.endsWith('.csv')) {
-        alert("Please upload a valid CSV file.");
+      if (!file || (!file.name.endsWith('.csv') && !file.name.endsWith('.xlsx'))) {
+        alert("Please upload a valid .csv or .xlsx file.");
         return;
       }
 
@@ -71,6 +73,7 @@
       formData.append("file", file);
 
       resultsDiv.innerHTML = "";
+      tablePreview.innerHTML = "";
       loading.classList.remove("hidden");
 
       try {
@@ -86,22 +89,38 @@
           resultsDiv.innerHTML = `
             <h2 class="text-xl font-semibold text-green-700 mb-2">Prediction Completed!</h2>
             <a href="${data.download_url}" class="inline-block mt-2 px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition">
-              Download Predicted CSV
+              Download Result CSV
             </a>
           `;
-        } else if (data.error) {
-          resultsDiv.innerHTML = `<p class="text-red-600 font-medium">${data.error}</p>`;
+
+          if (data.preview && data.preview.length > 0) {
+            let headers = Object.keys(data.preview[0]);
+            let rows = data.preview.map(row => {
+              return `<tr class="border-b">${headers.map(h => `<td class="px-4 py-2">${row[h]}</td>`).join('')}</tr>`;
+            }).join('');
+
+            tablePreview.innerHTML = `
+              <h3 class="text-lg font-medium mb-2 text-left">Preview (First 10 Rows):</h3>
+              <div class="overflow-x-auto">
+                <table class="min-w-full bg-white border rounded">
+                  <thead class="bg-blue-100">
+                    <tr>${headers.map(h => `<th class="px-4 py-2 text-left">${h}</th>`).join('')}</tr>
+                  </thead>
+                  <tbody>${rows}</tbody>
+                </table>
+              </div>
+            `;
+          }
         } else {
-          resultsDiv.innerHTML = `<p class="text-gray-700">${JSON.stringify(data)}</p>`;
+          resultsDiv.innerHTML = `<p class="text-red-600">${data.error || "Something went wrong."}</p>`;
         }
 
-      } catch (error) {
+      } catch (err) {
         loading.classList.add("hidden");
-        resultsDiv.innerHTML = `<p class="text-red-600">Error uploading file. Please try again.</p>`;
-        console.error(error);
+        resultsDiv.innerHTML = `<p class="text-red-600">Error uploading file.</p>`;
+        console.error(err);
       }
     });
   </script>
-
 </body>
 </html>
