@@ -1,6 +1,6 @@
 # app.py
 
-from fastapi import File, UploadFile
+from fastapi import FastAPI, File, UploadFile
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 import pandas as pd
@@ -112,24 +112,3 @@ def upload_csv(file: UploadFile = File(...)):
 def download_file(filename: str):
     file_path = f"uploads/{filename}"
     return FileResponse(path=file_path, filename=filename, media_type='text/csv')
-
-# from fastapi import FastAPI
-# from pydantic import BaseModel
-# from model.utils import MerchantModel
-
-# # Initialize app and model
-# app = FastAPI()
-# merchant_model = MerchantModel()
-
-# # Define request schema
-# class MerchantInput(BaseModel):
-#     merchant_name: str
-
-# @app.get("/")
-# def home():
-#     return {"message": "Merchant Uniform Name API is running."}
-
-# @app.post("/predict")
-# def predict_merchant(input_data: MerchantInput):
-#     result = merchant_model.predict(input_data.merchant_name)
-#     return result
