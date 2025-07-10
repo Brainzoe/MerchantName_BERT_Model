@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Merchant Name Predictor</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    .spinner {
+      border: 4px solid #f3f3f3;
+      border-top: 4px solid #3498db;
+      border-radius: 50%;
+      width: 36px;
+      height: 36px;
+      animation: spin 1s linear infinite;
+    }
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+  </style>
+</head>
+<body class="bg-gradient-to-br from-blue-50 via-white to-indigo-100 min-h-screen flex flex-col items-center justify-start p-6">
+
+  <div class="w-full max-w-2xl bg-white rounded-2xl shadow-xl p-8 mt-10">
+    <h1 class="text-3xl md:text-4xl font-extrabold text-center text-blue-800 mb-6">
+      Merchant Uniform Name Predictor
+    </h1>
+
+    <form id="uploadForm" class="space-y-4">
+      <label class="block text-gray-700 font-medium mb-1" for="file">Upload CSV File (.csv only):</label>
+      <input
+        id="fileInput"
+        type="file"
+        name="file"
+        accept=".csv"
+        required
+        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring focus:ring-blue-300"
+      />
+      <button
+        type="submit"
+        class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-lg transition"
+      >
+        Upload & Predict
+      </button>
+    </form>
+
+    <div id="loading" class="mt-6 hidden flex justify-center">
+      <div class="spinner"></div>
+    </div>
+
+    <div id="results" class="mt-8 text-center"></div>
+  </div>
+
+  <script>
+    const form = document.getElementById('uploadForm');
+    const resultsDiv = document.getElementById('results');
+    const loading = document.getElementById('loading');
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const fileInput = document.getElementById('fileInput');
+      const file = fileInput.files[0];
+
+      if (!file || !file.name.endsWith('.csv')) {
+        alert("Please upload a valid CSV file.");
+        return;
+      }
+
+      const formData = new FormData();
+      formData.append("file", file);
+
+      resultsDiv.innerHTML = "";
+      loading.classList.remove("hidden");
+
+      try {
+        const res = await fetch("/upload-csv/", {
+          method: "POST",
+          body: formData
+        });
+
+        const data = await res.json();
+        loading.classList.add("hidden");
+
+        if (data.download_url) {
+          resultsDiv.innerHTML = `
+            <h2 class="text-xl font-semibold text-green-700 mb-2">Prediction Completed!</h2>
+            <a href="${data.download_url}" class="inline-block mt-2 px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition">
+              Download Predicted CSV
+            </a>
+          `;
+        } else if (data.error) {
+          resultsDiv.innerHTML = `<p class="text-red-600 font-medium">${data.error}</p>`;
+        } else {
+          resultsDiv.innerHTML = `<p class="text-gray-700">${JSON.stringify(data)}</p>`;
+        }
+
+      } catch (error) {
+        loading.classList.add("hidden");
+        resultsDiv.innerHTML = `<p class="text-red-600">Error uploading file. Please try again.</p>`;
+        console.error(error);
+      }
+    });
+  </script>
+
+</body>
+</html>
